@@ -5,7 +5,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.User;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -53,7 +55,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             switch (currentState) {
                 case IDLE_STATE -> handleIdle(message);
-                case AWAITS_CATEGORY_STATE -> System.out.println(currentState);
+                case AWAITS_CATEGORY_STATE -> handleAwaitCategory(message);
                 case AWAITS_EXPENSE_STATE -> System.out.println(currentState);
             }
 
@@ -82,20 +84,33 @@ public class TelegramBot extends TelegramLongPollingBot {
                     getFormattedExpenses(),
                     defaultButtons
             );
-//            case ADD_EXPENSE_BTN -> sendMessage.setText("Введите имя категории и сумму через пробел");
-//
-//            default -> {
-//                String[] expense = incomingText.split(" ");
-//                if (expense.length == 2) {
-//                    String category = expense[0];
-//                    EXPENSES.putIfAbsent(category, new ArrayList<>());
-//                    Integer sum = Integer.parseInt(expense[1]);
-//                    EXPENSES.get(category).add(sum);
-//                } else {
-//                    sendMessage.setText("Похоже вы неверно ввели трату");
-//                }
-//            }
+
+            case ADD_EXPENSE_BTN -> changeState(
+                    AWAITS_CATEGORY_STATE,
+                    chatId,
+                    "Укажите категорию",
+                    null
+            );
+
+            default -> changeState(
+                    IDLE_STATE,
+                    chatId,
+                    "Я не знаю такой команды",
+                    defaultButtons
+            );
         }
+    }
+
+    private void handleAwaitCategory(Message incomingMessage){
+        String incomingText = incomingMessage.getText();
+        Long chatId = incomingMessage.getChatId();
+        EXPENSES.putIfAbsent(incomingText, new ArrayList<>());
+        changeState(
+                AWAITS_EXPENSE_STATE,
+                chatId,
+                "Введите сумму",
+                null
+        );
     }
 
     private void changeState(
@@ -107,7 +122,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         System.out.println(currentState + " -> " + newState);
         currentState = newState;
 
-        ReplyKeyboardMarkup keyboard = buildKeyboard(buttonNames);
+        ReplyKeyboard keyboard = buildKeyboard(buttonNames);
 
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
@@ -122,7 +137,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private ReplyKeyboardMarkup buildKeyboard(List<String> buttonNames) {
+    private ReplyKeyboard buildKeyboard(List<String> buttonNames) {
+        if (buttonNames == null || buttonNames.isEmpty()) return new ReplyKeyboardRemove(true);
         List<KeyboardRow> rows = new ArrayList<>();
         for (String buttonName: buttonNames) {
             KeyboardRow row = new KeyboardRow();
