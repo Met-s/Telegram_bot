@@ -17,6 +17,9 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String SHOW_CATEGORIES_BTN = "Показать категории";
     private static final String SHOW_EXPENSES_BTN = "Показать траты";
 
+    //  Состояние: IDLE -> AWAITS_CATEGORIES -> AWAITS_EXPENSES -> IDLE
+    //             IDLE -> IDLE
+
     private static final String IDLE_STATE = "IDLE";
     private static final String AWAITS_CATEGORY_STATE = "AWAITS_CATEGORY";
     private static final String AWAITS_EXPENSE_STATE = "AWAITS_EXPENSE";
@@ -60,36 +63,55 @@ public class TelegramBot extends TelegramLongPollingBot {
         String incomingText = incomingMessage.getText();
         Long chatId = incomingMessage.getChatId();
 
-        SendMessage sendMessage = new SendMessage();
-        sendMessage.setChatId(chatId);
+        final List<String> defaultButtons = List.of(
+                ADD_EXPENSE_BTN,
+                SHOW_CATEGORIES_BTN,
+                SHOW_EXPENSES_BTN
+        );
 
         switch (incomingText) {
-            case SHOW_CATEGORIES_BTN -> sendMessage.setText(getFormattedCategories());
-            case SHOW_EXPENSES_BTN -> sendMessage.setText(getFormattedExpenses());
-            case ADD_EXPENSE_BTN -> sendMessage.setText("Введите имя категории и сумму через пробел");
-
-            default -> {
-                String[] expense = incomingText.split(" ");
-                if (expense.length == 2) {
-                    String category = expense[0];
-                    EXPENSES.putIfAbsent(category, new ArrayList<>());
-                    Integer sum = Integer.parseInt(expense[1]);
-                    EXPENSES.get(category).add(sum);
-                } else {
-                    sendMessage.setText("Похоже вы неверно ввели трату");
-                }
-            }
+            case SHOW_CATEGORIES_BTN -> changeState(
+                    IDLE_STATE,
+                    chatId,
+                    getFormattedCategories(),
+                    defaultButtons
+            );
+            case SHOW_EXPENSES_BTN -> changeState(
+                    IDLE_STATE,
+                    chatId,
+                    getFormattedExpenses(),
+                    defaultButtons
+            );
+//            case ADD_EXPENSE_BTN -> sendMessage.setText("Введите имя категории и сумму через пробел");
+//
+//            default -> {
+//                String[] expense = incomingText.split(" ");
+//                if (expense.length == 2) {
+//                    String category = expense[0];
+//                    EXPENSES.putIfAbsent(category, new ArrayList<>());
+//                    Integer sum = Integer.parseInt(expense[1]);
+//                    EXPENSES.get(category).add(sum);
+//                } else {
+//                    sendMessage.setText("Похоже вы неверно ввели трату");
+//                }
+//            }
         }
+    }
 
-    //  Состояние: IDLE -> AWAITS_CATEGORIES -> AWAITS_EXPENSES -> IDLE
+    private void changeState(
+            String newState,
+            Long chatId,
+            String messageText,
+            List<String> buttonNames
+            ) {
+        System.out.println(currentState + " -> " + newState);
+        currentState = newState;
 
-        ReplyKeyboardMarkup keyboard = buildKeyboard(
-                List.of(
-                        ADD_EXPENSE_BTN,
-                        SHOW_CATEGORIES_BTN,
-                        SHOW_EXPENSES_BTN
-                )
-        );
+        ReplyKeyboardMarkup keyboard = buildKeyboard(buttonNames);
+
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(chatId);
+        sendMessage.setText(messageText);
         sendMessage.setReplyMarkup(keyboard);
 
         try {
