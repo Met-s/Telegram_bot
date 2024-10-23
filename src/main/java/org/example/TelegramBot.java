@@ -49,48 +49,11 @@ public class TelegramBot extends TelegramLongPollingBot {
             System.out.println(logMessage);
 
             switch (currentState) {
-                case IDLE_STATE -> System.out.println(currentState);
+                case IDLE_STATE -> handleIdle(message);
                 case AWAITS_CATEGORY_STATE -> System.out.println(currentState);
                 case AWAITS_EXPENSE_STATE -> System.out.println(currentState);
             }
 
-//            SendMessage sendMessage = new SendMessage();
-//            sendMessage.setChatId(message.getChatId());
-
-//            switch (text) {
-//                case SHOW_CATEGORIES_BTN -> sendMessage.setText(getFormattedCategories());
-//                case SHOW_EXPENSES_BTN -> sendMessage.setText(getFormattedExpenses());
-//                case ADD_EXPENSE_BTN -> sendMessage.setText("Введите имя категории и сумму через пробел");
-//
-//                default -> {
-//                    String[] expense = text.split(" ");
-//                    if (expense.length == 2) {
-//                        String category = expense[0];
-//                        EXPENSES.putIfAbsent(category, new ArrayList<>());
-//                        Integer sum = Integer.parseInt(expense[1]);
-//                        EXPENSES.get(category).add(sum);
-//                    } else {
-//                        sendMessage.setText("Похоже вы неверно ввели трату");
-//                    }
-//                }
-//            }
-
-
-//            ReplyKeyboardMarkup keyboard = buildKeyboard(
-//                                List.of(
-//                                        ADD_EXPENSE_BTN,
-//                                        SHOW_CATEGORIES_BTN,
-//                                        SHOW_EXPENSES_BTN
-//                                )
-//            );
-//            sendMessage.setReplyMarkup(keyboard);
-//
-//            try {
-//                execute(sendMessage);
-//            } catch (TelegramApiException e) {
-//                System.out.println("!!!ERROR!!!");
-//                System.out.println(e);
-//            }
     }
 
     private void handleIdle(Message incomingMessage) {
@@ -117,6 +80,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             }
         }
+
+    //  Состояние: IDLE -> AWAITS_CATEGORIES -> AWAITS_EXPENSES -> IDLE
 
         ReplyKeyboardMarkup keyboard = buildKeyboard(
                 List.of(
