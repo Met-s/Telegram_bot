@@ -27,11 +27,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private static final String AWAITS_CATEGORY_STATE = "AWAITS_CATEGORY";
     private static final String AWAITS_EXPENSE_STATE = "AWAITS_EXPENSE";
 
-    private static String currentState = IDLE_STATE;
-    private static String lastCategory = null;
-
-    private static final Map<String, List<Integer>> EXPENSES = new HashMap<>();
-
     private static final Map<Long, ChatState> CHATS = new HashMap<>();
 
     @Override
@@ -59,22 +54,25 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
             Message message = update.getMessage();
             Long chatId = message.getChatId();
-            CHATS.putIfAbsent(chatId, new ChatState());
+            CHATS.putIfAbsent(chatId, new ChatState(IDLE_STATE));
 
             User from = message.getFrom();
             String text = message.getText();
             String logMessage = from.getUserName() + ": " + text;
             System.out.println(logMessage);
 
-            switch (currentState) {
-                case IDLE_STATE -> handleIdle(message);
-                case AWAITS_CATEGORY_STATE -> handleAwaitsCategory(message);
-                case AWAITS_EXPENSE_STATE -> handleAwaitsExpense(message);
+            ChatState currentChat= CHATS.get(chatId);
+            switch (currentChat.state) {
+                case IDLE_STATE -> handleIdle(message, currentChat);
+                case AWAITS_CATEGORY_STATE -> handleAwaitsCategory(message,
+                        currentChat);
+                case AWAITS_EXPENSE_STATE -> handleAwaitsExpense(message,
+                        currentChat);
             }
 
     }
 
-    private void handleIdle(Message incomingMessage) {
+    private void handleIdle(Message incomingMessage, ChatState currentChat) {
         String incomingText = incomingMessage.getText();
         Long chatId = incomingMessage.getChatId();
 
@@ -88,19 +86,22 @@ public class TelegramBot extends TelegramLongPollingBot {
             case SHOW_CATEGORIES_BTN -> changeState(
                     IDLE_STATE,
                     chatId,
-                    getFormattedCategories(),
+                    currentChat,
+                    currentChat.getFormattedCategories(),
                     defaultButtons
             );
             case SHOW_EXPENSES_BTN -> changeState(
                     IDLE_STATE,
                     chatId,
-                    getFormattedExpenses(),
+                    currentChat,
+                    currentChat.getFormattedExpenses(),
                     defaultButtons
             );
 
             case ADD_EXPENSE_BTN -> changeState(
                     AWAITS_CATEGORY_STATE,
                     chatId,
+                    currentChat,
                     "Укажите категорию",
                     null
             );
@@ -108,31 +109,36 @@ public class TelegramBot extends TelegramLongPollingBot {
             default -> changeState(
                     IDLE_STATE,
                     chatId,
+                    currentChat,
                     "Я не знаю такой команды",
                     defaultButtons
             );
         }
     }
 
-    private void handleAwaitsCategory(Message incomingMessage){
+    private void handleAwaitsCategory(Message incomingMessage,
+                                      ChatState currentChat){
         String incomingText = incomingMessage.getText();
         Long chatId = incomingMessage.getChatId();
-        EXPENSES.putIfAbsent(incomingText, new ArrayList<>());
-        lastCategory = incomingText;
+        currentChat.expenses.putIfAbsent(incomingText, new ArrayList<>());
+        currentChat.data = incomingText;
         changeState(
                 AWAITS_EXPENSE_STATE,
                 chatId,
+                currentChat,
                 "Введите сумму",
                 null
         );
     }
 
-    private void handleAwaitsExpense(Message incomingMessage) {
+    private void handleAwaitsExpense(Message incomingMessage,
+                                     ChatState currentChat) {
         Long chatId = incomingMessage.getChatId();
-        if (lastCategory == null) {
+        if (currentChat.data == null) {
             changeState(
                     IDLE_STATE,
                     chatId,
+                    currentChat,
                     "Что-то пошло не так. Попробуйте сначала",
                     List.of(
                             ADD_EXPENSE_BTN,
@@ -144,10 +150,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         String incomingText = incomingMessage.getText();
 
         Integer expense = Integer.parseInt(incomingText);
-        EXPENSES.get(lastCategory).add(expense);
+        currentChat.expenses.get(currentChat.data).add(expense);
         changeState(
                 IDLE_STATE,
                 chatId,
+                currentChat,
                 "Трата успушно добавлена",
                 List.of(
                         ADD_EXPENSE_BTN,
@@ -159,14 +166,13 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void changeState(
             String newState,
             Long chatId,
+            ChatState currentChat,
             String messageText,
             List<String> buttonNames
             ) {
-        System.out.println(currentState + " -> " + newState);
-        currentState = newState;
-
+        System.out.println(currentChat.state + " -> " + newState);
+        currentChat.state = newState;
         ReplyKeyboard keyboard = buildKeyboard(buttonNames);
-
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId);
         sendMessage.setText(messageText);
@@ -192,28 +198,5 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboard.setKeyboard(rows);
         return keyboard;
     }
-
-    private String getFormattedCategories() {
-        Set<String> categories = EXPENSES.keySet();
-        if (categories.isEmpty()) return "Пока нет ни одной категории";
-        return String.join("\n", EXPENSES.keySet());
-    }
-
-    private String getFormattedExpenses() {
-        Set<Map.Entry<String, List<Integer>>> expensesPerCategories =
-                EXPENSES.entrySet();
-        if (expensesPerCategories.isEmpty()) return "Пока нет ни одной " +
-                "категории";
-
-        String formattedResult = "";
-        for (Map.Entry<String, List<Integer>> category : EXPENSES.entrySet()) {
-            String categoryExpenses = "";
-            for (Integer expense : category.getValue()) {
-                categoryExpenses += expense + " ";
-            }
-            formattedResult += (category.getKey() + ": " + categoryExpenses) + "\n";
-        }
-        return formattedResult;
-    }
 }
-// 1:47:00 Java_TelegramBot_2
+// 1:52:20 Java_TelegramBot_2

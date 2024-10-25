@@ -6,9 +6,13 @@ import java.util.Map;
 import java.util.Set;
 
 public class ChatState {
-    String state;
-    String data = null;
-    Map<String, List<Integer>> expenses = new HashMap<>();
+    public String state;
+    public String data = null;
+    public Map<String, List<Integer>> expenses = new HashMap<>();
+
+    ChatState(String initialState) {
+        state = initialState;
+    }
 
     public String getFormattedCategories() {
         Set<String> categories = expenses.keySet();
