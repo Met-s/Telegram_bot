@@ -1,5 +1,4 @@
 package org.example;
-import org.example.Config;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -37,8 +36,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public String getBotToken() {
         Config botToken = new Config();
-            String token = String.valueOf(botToken.botToken());
-            return token;
+        return String.valueOf(botToken.botToken());
     }
 
 //
@@ -81,6 +79,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 SHOW_CATEGORIES_BTN,
                 SHOW_EXPENSES_BTN
         );
+
 
         switch (incomingText) {
             case SHOW_CATEGORIES_BTN -> changeState(
