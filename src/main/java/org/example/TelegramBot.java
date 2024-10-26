@@ -198,4 +198,3 @@ public class TelegramBot extends TelegramLongPollingBot {
         return keyboard;
     }
 }
-// 1:52:20 Java_TelegramBot_2
