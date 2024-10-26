@@ -7,7 +7,10 @@ import java.net.InetSocketAddress;
 
 public class DummyServer {
     public static void startServer() throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+        HttpServer server = HttpServer.create(
+                new InetSocketAddress(getServerPort()),
+                0
+        );
         server.createContext("/", DummyServer::getServerStatus);
     }
 
@@ -16,5 +19,9 @@ public class DummyServer {
         exchange.sendResponseHeaders(200, resp.getBytes().length);
         exchange.getResponseBody().write(resp.getBytes());
         exchange.close();
+    }
+
+    static Integer getServerPort() {
+        return Integer.parseInt(System.getenv("SERVER_PORT"));
     }
 }
