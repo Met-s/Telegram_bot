@@ -39,11 +39,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         return String.valueOf(botToken.botToken());
     }
 
-//
-
-//      return "7663841192:AAFBjKP3AUqvyocoKNuAhrHtYj5FRfzCgmQ";
-//    "7663841192:AAFBjKP3AUqvyocoKNuAhrHtYj5FRfzCgmQ"
-
     @Override
     public void onUpdateReceived(Update update) {
         if (!update.hasMessage() || !update.getMessage().hasText()) {
